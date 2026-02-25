@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { getEnabledFields, getCustomFields } from '../lib/fields';
-import { TabsBar } from './components/TabsBar';
+import { buildTree, getBreadcrumb } from '../lib/tabsTree';
+import { TabsTree } from './components/TabsTree';
 import { ItemsTable } from './components/ItemsTable';
 import { ItemForm } from './components/ItemForm';
 import { ItemCard } from './components/ItemCard';
 import { AddTabForm } from './components/AddTabForm';
+import { MoveTabForm } from './components/MoveTabForm';
 import { TabFieldsForm } from './components/TabFieldsForm';
 import { Search } from './components/Search';
 
@@ -18,18 +20,25 @@ export default function Home() {
   const [editingItem, setEditingItem] = useState(null);
   const [showItemForm, setShowItemForm] = useState(false);
   const [showAddTab, setShowAddTab] = useState(false);
+  const [addTabDefaultParentId, setAddTabDefaultParentId] = useState(null);
+  const [movingTab, setMovingTab] = useState(null);
   const [editingTabFields, setEditingTabFields] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedItemCard, setSelectedItemCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const loadTabs = async () => {
     const { data, error } = await supabase
       .from('tabs')
       .select('*')
       .order('sort_order');
-    if (!error) setTabs(data || []);
-    if (data?.length && !selectedTabId) setSelectedTabId(data[0].id);
+    const list = data || [];
+    if (!error) setTabs(list);
+    if (list.length && !selectedTabId) {
+      const roots = buildTree(list);
+      setSelectedTabId(roots[0]?.id ?? list[0].id);
+    }
   };
 
   const loadItems = async () => {
@@ -48,6 +57,13 @@ export default function Home() {
   useEffect(() => {
     loadTabs();
   }, []);
+
+  useEffect(() => {
+    if (selectedTabId && tabs.length > 0 && !tabs.some((t) => t.id === selectedTabId)) {
+      const roots = buildTree(tabs);
+      setSelectedTabId(roots[0]?.id ?? tabs[0]?.id ?? null);
+    }
+  }, [tabs, selectedTabId]);
 
   useEffect(() => {
     setSelectedIds([]);
@@ -77,10 +93,19 @@ export default function Home() {
     loadItems();
   };
 
-  const handleAddTab = () => setShowAddTab(true);
-  const handleCloseAddTab = () => {
+  const handleAddTab = () => {
+    setAddTabDefaultParentId(null);
+    setShowAddTab(true);
+  };
+  const handleCloseAddTab = (opts) => {
     setShowAddTab(false);
-    loadTabs();
+    const newParentId = opts?.newParentId ?? null;
+    setAddTabDefaultParentId(newParentId);
+    loadTabs().then(() => {
+      if (newParentId) {
+        setShowAddTab(true);
+      }
+    });
   };
 
   const handleDeleteTab = async (tab) => {
@@ -109,6 +134,12 @@ export default function Home() {
 
   const handleCloseTabFields = () => {
     setEditingTabFields(null);
+    loadTabs();
+  };
+
+  const handleMoveTab = (tab) => setMovingTab(tab);
+  const handleCloseMoveTab = () => {
+    setMovingTab(null);
     loadTabs();
   };
 
@@ -152,43 +183,69 @@ export default function Home() {
 
   return (
     <div className="app-root">
-      <header className="app-header" role="banner">
-        <div className="app-header-bar container">
-          <a href="/" className="app-logo">
-            <span className="app-logo-crop">
+      <main className={`app-main ${sidebarCollapsed ? 'app-main--sidebar-collapsed' : ''}`}>
+        <aside className={`app-sidebar ${sidebarCollapsed ? 'app-sidebar--collapsed' : ''}`} aria-label="Меню">
+          <div className="app-sidebar-logo">
+            <a href="/" className="app-logo" aria-label="Artecodb">
               <img src="/logo.png" alt="Artecodb" className="app-logo-img" />
-            </span>
-          </a>
-          <div className="app-header-right">
-            <Search tabs={tabs} onSelectItem={handleSearchSelectItem} />
-            <a href="/parser" className="app-link">
-              Актуализация с LTB.ge →
             </a>
           </div>
-        </div>
-      </header>
-
-      <main className="app-main">
-        <div className="container">
-          <section className="tabs-section card">
-            <div className="tabs-section-header">
-              <h2 className="section-title">Категории</h2>
-              <TabsBar
-                tabs={tabs}
+          <div className="app-sidebar-header">
+            <button
+              type="button"
+              className="app-sidebar-toggle"
+              onClick={() => setSidebarCollapsed((v) => !v)}
+              title={sidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
+              aria-expanded={!sidebarCollapsed}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: sidebarCollapsed ? 'rotate(180deg)' : 'none' }}>
+                <path d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            {!sidebarCollapsed && <span className="app-sidebar-title">Категории</span>}
+          </div>
+          {!sidebarCollapsed && (
+            <>
+              <div className="app-sidebar-tools">
+                <Search tabs={tabs} onSelectItem={handleSearchSelectItem} />
+                <a href="/parser" className="app-link app-link--block">
+                  Актуализация с LTB.ge →
+                </a>
+              </div>
+              <div className="app-sidebar-body">
+                <TabsTree
+                tree={buildTree(tabs)}
                 selectedTabId={selectedTabId}
                 onSelect={setSelectedTabId}
                 onAddTab={handleAddTab}
                 onDeleteTab={handleDeleteTab}
                 onEditFields={setEditingTabFields}
-                onReorder={handleReorderTabs}
+                onMoveTab={handleMoveTab}
               />
-            </div>
-          </section>
+              </div>
+            </>
+          )}
+        </aside>
 
+        <div className="app-content">
+          <div className="container">
+          {!selectedTab && (
+            <div className="content-placeholder">
+              <p>Выберите категорию в меню слева или добавьте новую.</p>
+            </div>
+          )}
           {selectedTab && (
             <section className="content-section card">
               <div className="content-section-header">
-                <h2 className="section-title content-section-title">{selectedTab.name}</h2>
+                <h2 className="section-title content-section-title">
+                  {getBreadcrumb(tabs, selectedTab.id).length > 1 ? (
+                    <span className="breadcrumb">
+                      {getBreadcrumb(tabs, selectedTab.id).join(' → ')}
+                    </span>
+                  ) : (
+                    selectedTab.name
+                  )}
+                </h2>
                 <button type="button" onClick={handleAddItem} className="btn btn-primary">
                   + Добавить позицию
                 </button>
@@ -226,7 +283,20 @@ export default function Home() {
             />
           )}
 
-          {showAddTab && <AddTabForm onClose={handleCloseAddTab} />}
+          {showAddTab && (
+            <AddTabForm
+              tabsFlat={tabs}
+              defaultParentId={addTabDefaultParentId ?? selectedTabId}
+              onClose={handleCloseAddTab}
+            />
+          )}
+          {movingTab && (
+            <MoveTabForm
+              tab={movingTab}
+              tabsFlat={tabs}
+              onClose={handleCloseMoveTab}
+            />
+          )}
           {editingTabFields && (
             <TabFieldsForm tab={editingTabFields} onClose={handleCloseTabFields} />
           )}
@@ -239,6 +309,7 @@ export default function Home() {
               onEdit={(item) => { setSelectedItemCard(null); setEditingItem(item); setShowItemForm(true); }}
             />
           )}
+          </div>
         </div>
       </main>
     </div>

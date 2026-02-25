@@ -33,6 +33,7 @@
   }
 }
 
+
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -172,6 +173,8 @@ a:hover {
 
 /* App layout */
 .app-root {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   padding-bottom: clamp(24px, 6vw, 48px);
 }
@@ -255,7 +258,149 @@ a:hover {
 }
 
 .app-main {
-  padding-top: clamp(20px, 4vw, 32px);
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding-top: 0;
+}
+
+.app-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 10;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  transition: width var(--transition);
+  overflow: hidden;
+}
+
+.app-sidebar--collapsed {
+  width: 56px;
+}
+
+.app-sidebar-logo {
+  flex-shrink: 0;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.app-sidebar--collapsed .app-sidebar-logo {
+  padding: 10px 8px;
+}
+
+.app-sidebar-logo .app-logo {
+  display: block;
+  line-height: 0;
+}
+
+.app-sidebar-logo .app-logo-img {
+  display: block;
+  width: auto;
+  height: 140px;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center;
+  transition: height var(--transition);
+}
+
+.app-sidebar--collapsed .app-sidebar-logo .app-logo-img {
+  height: 64px;
+}
+
+.app-sidebar-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
+.app-sidebar-tools {
+  flex-shrink: 0;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-sidebar-tools .search-wrap {
+  max-width: none;
+}
+
+.app-link--block {
+  display: block;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+}
+
+.app-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition), border-color var(--transition);
+  flex-shrink: 0;
+}
+
+.app-sidebar-toggle:hover {
+  color: var(--accent);
+  background: var(--surface-hover);
+  border-color: var(--accent-muted);
+}
+
+.app-sidebar-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.app-sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+  margin-left: 260px;
+  padding: clamp(20px, 4vw, 32px) 0;
+  overflow-y: auto;
+  transition: margin-left var(--transition);
+}
+
+.app-main--sidebar-collapsed .app-content {
+  margin-left: 56px;
+}
+
+.content-placeholder {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9375rem;
 }
 
 .tabs-section {
@@ -406,6 +551,141 @@ a:hover {
 .tabs-bar-add:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* Tabs tree (иерархия категорий) */
+.tabs-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tabs-tree-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.tabs-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tabs-tree-node {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid transparent;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.tabs-tree-row:hover {
+  background: var(--surface-hover);
+}
+
+.tabs-tree-row--active {
+  background: var(--surface-hover);
+  border-color: var(--border-light);
+  box-shadow: 0 0 0 1px var(--accent-muted);
+}
+
+.tabs-tree-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.tabs-tree-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.tabs-tree-spacer {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+}
+
+.tabs-tree-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tabs-tree-label {
+  flex: 1;
+  text-align: left;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tabs-tree-label:hover {
+  color: var(--accent);
+}
+
+.tabs-tree-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.7;
+}
+
+.tabs-tree-row:hover .tabs-tree-actions {
+  opacity: 1;
+}
+
+.tabs-tree-btn {
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition);
+}
+
+.tabs-tree-btn:hover {
+  color: var(--accent);
+}
+
+.tabs-tree-btn--move {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.tabs-tree-btn--move:hover {
+  color: var(--accent);
+}
+
+.tabs-tree-btn--remove:hover {
+  color: var(--danger);
+}
+
+.tabs-tree-children {
+  margin-left: 0;
 }
 
 /* Items table (desktop) */
@@ -645,6 +925,12 @@ a:hover {
   color: var(--text);
 }
 
+.move-tab-desc {
+  margin: 0 0 16px;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+
 /* Карточка товара (детальный просмотр) */
 .item-card-overlay .modal {
   max-width: 640px;
@@ -873,6 +1159,40 @@ a:hover {
 }
 .form-group {
   margin-bottom: 16px;
+}
+
+.form-group-inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.form-group-inline .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-parent-block {
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.add-parent-block .input {
+  margin-bottom: 10px;
+}
+
+.form-actions--sm {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.btn-sm {
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  white-space: nowrap;
 }
 
 .form-row {
