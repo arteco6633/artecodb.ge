@@ -174,7 +174,7 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
       <div className="modal" style={{ padding: '24px' }} onClick={(e) => e.stopPropagation()}>
         <h2 id="item-form-title" className="modal-title">{isEdit ? 'Редактировать позицию' : 'Новая позиция'}</h2>
         {submitError && (
-          <p className="form-error" role="alert" style={{ marginBottom: 16, color: '#f87171', fontSize: '0.9rem' }}>{submitError}</p>
+          <p className="form-error" role="alert" style={{ marginBottom: 16, color: 'var(--danger)', fontSize: '0.9rem' }}>{submitError}</p>
         )}
         <form onSubmit={handleSubmit}>
           {has('name') && (

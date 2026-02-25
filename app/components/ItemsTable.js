@@ -1,11 +1,31 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import { FIELD_IDS } from '../../lib/fields';
 
-export function ItemsTable({ items, enabledFields, customFields = [], onEdit, onDelete, onOpenCard }) {
+export function ItemsTable({
+  items,
+  enabledFields,
+  customFields = [],
+  onEdit,
+  onDelete,
+  onOpenCard,
+  selectedIds = [],
+  onToggleSelect,
+  onSelectAll,
+  onBulkDelete,
+}) {
   const fields = Array.isArray(enabledFields) && enabledFields.length > 0 ? enabledFields : FIELD_IDS;
   const has = (id) => fields.includes(id);
   const customList = Array.isArray(customFields) ? customFields : [];
+  const selectedSet = new Set(selectedIds);
+  const allIds = items.map((i) => i.id);
+  const allSelected = allIds.length > 0 && allIds.every((id) => selectedSet.has(id));
+  const someSelected = selectedSet.size > 0;
+  const selectAllRef = useRef(null);
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected && !allSelected;
+  }, [someSelected, allSelected]);
 
   if (!items.length) {
     return (
@@ -83,10 +103,29 @@ export function ItemsTable({ items, enabledFields, customFields = [], onEdit, on
 
   return (
     <>
+      {someSelected && onBulkDelete && (
+        <div className="bulk-actions">
+          <span className="bulk-actions-label">Выбрано: {selectedSet.size}</span>
+          <button type="button" className="btn btn-danger btn-sm" onClick={onBulkDelete}>
+            Удалить выбранные
+          </button>
+        </div>
+      )}
       <div className="items-table-wrap">
         <table className="items-table">
           <thead>
             <tr>
+              {onToggleSelect && (
+                <th className="items-th items-th--check">
+                  <input
+                    type="checkbox"
+                    ref={selectAllRef}
+                    checked={allSelected}
+                    onChange={(e) => onSelectAll && onSelectAll(e.target.checked)}
+                    aria-label="Выбрать все"
+                  />
+                </th>
+              )}
               {has('photo') && <th className={thClass('photo')}>Фото</th>}
               {has('name') && <th className={thClass('name')}>Название</th>}
               {has('article') && <th className={thClass('article')}>Артикул</th>}
@@ -107,9 +146,19 @@ export function ItemsTable({ items, enabledFields, customFields = [], onEdit, on
             {items.map((item) => (
               <tr
                 key={item.id}
-                className={`items-tr ${onOpenCard ? 'items-tr--clickable' : ''}`}
+                className={`items-tr ${onOpenCard ? 'items-tr--clickable' : ''} ${selectedSet.has(item.id) ? 'items-tr--selected' : ''}`}
                 onClick={onOpenCard ? () => onOpenCard(item) : undefined}
               >
+                {onToggleSelect && (
+                  <td className="items-td items-td--check" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedSet.has(item.id)}
+                      onChange={() => onToggleSelect(item.id)}
+                      aria-label={`Выбрать ${item.name || item.article || item.id}`}
+                    />
+                  </td>
+                )}
                 {has('photo') && <td className={tdClass('photo')}>{renderCell(item, 'photo')}</td>}
                 {has('name') && <td className={tdClass('name')}>{renderCell(item, 'name')}</td>}
                 {has('article') && <td className={tdClass('article')}>{renderCell(item, 'article')}</td>}
@@ -137,12 +186,22 @@ export function ItemsTable({ items, enabledFields, customFields = [], onEdit, on
         {items.map((item) => (
           <article
             key={item.id}
-            className={`item-card card ${!has('photo') ? 'item-card--no-photo' : ''} ${onOpenCard ? 'item-card--openable' : ''}`}
+            className={`item-card card ${!has('photo') ? 'item-card--no-photo' : ''} ${onOpenCard ? 'item-card--openable' : ''} ${selectedSet.has(item.id) ? 'item-card--selected' : ''}`}
             onClick={onOpenCard ? () => onOpenCard(item) : undefined}
             role={onOpenCard ? 'button' : undefined}
             tabIndex={onOpenCard ? 0 : undefined}
             onKeyDown={onOpenCard ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenCard(item); } } : undefined}
           >
+            {onToggleSelect && (
+              <div className="item-card-check" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={selectedSet.has(item.id)}
+                  onChange={() => onToggleSelect(item.id)}
+                  aria-label={`Выбрать ${item.name || item.article || item.id}`}
+                />
+              </div>
+            )}
             {has('photo') && (
               <div className="item-card-media">
                 {item.photo_url ? (

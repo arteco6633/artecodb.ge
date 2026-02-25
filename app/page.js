@@ -21,6 +21,7 @@ export default function Home() {
   const [editingTabFields, setEditingTabFields] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedItemCard, setSelectedItemCard] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const loadTabs = async () => {
     const { data, error } = await supabase
@@ -49,6 +50,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    setSelectedIds([]);
     setLoading(true);
     loadItems().finally(() => setLoading(false));
   }, [selectedTabId]);
@@ -98,6 +100,24 @@ export default function Home() {
 
   const handleOpenItemCard = (item) => setSelectedItemCard(item);
   const handleCloseItemCard = () => setSelectedItemCard(null);
+
+  const handleToggleSelect = (id) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  };
+  const handleSelectAll = (checked) => {
+    if (!selectedTabId) return;
+    setSelectedIds(checked ? items.map((i) => i.id) : []);
+  };
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Удалить выбранные позиции (${selectedIds.length})?`)) return;
+    for (const id of selectedIds) {
+      await supabase.from('items').delete().eq('id', id);
+    }
+    setSelectedIds([]);
+    loadItems();
+  };
+
   const handleSearchSelectItem = (item) => {
     setSelectedTabId(item.tab_id);
     setSelectedItemCard(item);
@@ -118,10 +138,14 @@ export default function Home() {
 
   return (
     <div className="app-root">
-      <header className="app-header">
-        <div className="container">
-          <div className="app-header-inner">
-            <h1 className="app-logo">Artecodb</h1>
+      <header className="app-header" role="banner">
+        <div className="app-header-bar container">
+          <a href="/" className="app-logo">
+            <span className="app-logo-crop">
+              <img src="/logo.png" alt="Artecodb" className="app-logo-img" />
+            </span>
+          </a>
+          <div className="app-header-right">
             <Search tabs={tabs} onSelectItem={handleSearchSelectItem} />
             <a href="/parser" className="app-link">
               Актуализация с LTB.ge →
@@ -167,6 +191,10 @@ export default function Home() {
                   onEdit={handleEditItem}
                   onDelete={handleDeleteItem}
                   onOpenCard={handleOpenItemCard}
+                  selectedIds={selectedIds}
+                  onToggleSelect={handleToggleSelect}
+                  onSelectAll={handleSelectAll}
+                  onBulkDelete={handleBulkDelete}
                 />
               )}
             </section>

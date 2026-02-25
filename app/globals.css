@@ -5,24 +5,24 @@
 }
 
 :root {
-  --bg: #0c0c0e;
-  --bg-elevated: #131316;
-  --surface: #1a1a1e;
-  --surface-hover: #222228;
-  --border: #2a2a30;
-  --border-light: #36363d;
-  --text: #f0f0f2;
-  --text-secondary: #a0a0a8;
-  --muted: #6b6b75;
-  --accent: #5b8def;
-  --accent-hover: #4a7ad9;
-  --accent-muted: rgba(91, 141, 239, 0.15);
-  --danger: #e5484d;
-  --danger-muted: rgba(229, 72, 77, 0.12);
-  --success: #46a758;
+  --bg: #f2f2f4;
+  --bg-elevated: #fafafa;
+  --surface: #ffffff;
+  --surface-hover: #f5f5f7;
+  --border: #e5e5e8;
+  --border-light: #ebebed;
+  --text: #1c1c1e;
+  --text-secondary: #6b6b75;
+  --muted: #8e8e93;
+  --accent: #4a7ac8;
+  --accent-hover: #3d6ab5;
+  --accent-muted: rgba(74, 122, 200, 0.12);
+  --danger: #c73e3e;
+  --danger-muted: rgba(199, 62, 62, 0.1);
+  --success: #3d8f4a;
   --radius: 10px;
   --radius-sm: 6px;
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   --transition: 0.2s ease;
 }
 
@@ -177,25 +177,76 @@ a:hover {
 }
 
 .app-header {
-  padding: clamp(16px, 3vw, 24px) 0;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-top: none;
+  background: rgba(250, 250, 250, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 
+.app-header-bar,
 .app-header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  padding-top: clamp(12px, 2vw, 16px);
+  padding-bottom: clamp(12px, 2vw, 16px);
+}
+
+.app-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-header-right .search-wrap {
+  flex: 0 1 auto;
+  max-width: 280px;
+}
+
+.app-header .container {
+  width: 100%;
 }
 
 .app-logo {
+  display: block;
   margin: 0;
-  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  text-decoration: none;
   color: var(--text);
+  line-height: 0;
+}
+.app-logo:hover {
+  color: var(--text);
+}
+
+.app-logo-crop {
+  height: 56px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-logo-crop .app-logo-img {
+  height: 200px;
+  width: auto;
+  object-fit: contain;
+  object-position: center;
+}
+@media (max-width: 480px) {
+  .app-logo-crop {
+    height: 44px;
+  }
+  .app-logo-crop .app-logo-img {
+    height: 140px;
+  }
 }
 
 .app-link {
@@ -455,6 +506,7 @@ a:hover {
 }
 
 .item-card {
+  position: relative;
   padding: 0;
   overflow: hidden;
   display: grid;
@@ -543,7 +595,7 @@ a:hover {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -685,6 +737,13 @@ a:hover {
   transform: translateY(-50%);
   color: var(--muted);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-icon-wrap .search-icon {
+  flex-shrink: 0;
 }
 .search-results {
   position: absolute;
@@ -745,6 +804,50 @@ a:hover {
   background: var(--surface-hover);
 }
 
+/* Массовые действия */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 12px;
+  flex-wrap: wrap;
+}
+.bulk-actions-label {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+.items-th--check,
+.items-td--check {
+  width: 44px;
+  text-align: center;
+  vertical-align: middle;
+}
+.items-th--check input,
+.items-td--check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.items-tr--selected {
+  background: var(--accent-muted);
+}
+.item-card-check {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+}
+.item-card-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.item-card--selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 .form-group {
   margin-bottom: 16px;
 }
