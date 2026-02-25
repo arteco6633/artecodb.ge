@@ -27,6 +27,15 @@ export default function Home() {
   const [selectedItemCard, setSelectedItemCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const m = window.matchMedia('(max-width: 768px)');
+    setIsMobile(m.matches);
+    const handler = () => setIsMobile(m.matches);
+    m.addEventListener('change', handler);
+    return () => m.removeEventListener('change', handler);
+  }, []);
 
   const loadTabs = async () => {
     const { data, error } = await supabase
@@ -184,24 +193,30 @@ export default function Home() {
   return (
     <div className="app-root">
       <main className={`app-main ${sidebarCollapsed ? 'app-main--sidebar-collapsed' : ''}`}>
-        <aside className={`app-sidebar ${sidebarCollapsed ? 'app-sidebar--collapsed' : ''}`} aria-label="Меню">
+        <aside
+          className={`app-sidebar ${sidebarCollapsed ? 'app-sidebar--collapsed' : ''}`}
+          aria-label="Меню"
+          onMouseEnter={() => setSidebarCollapsed(false)}
+          onMouseLeave={() => setSidebarCollapsed(true)}
+        >
           <div className="app-sidebar-logo">
             <a href="/" className="app-logo" aria-label="Artecodb">
               <img src="/logo.png" alt="Artecodb" className="app-logo-img" />
             </a>
           </div>
-          <div className="app-sidebar-header">
-            <button
-              type="button"
-              className="app-sidebar-toggle"
-              onClick={() => setSidebarCollapsed((v) => !v)}
-              title={sidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
-              aria-expanded={!sidebarCollapsed}
-            >
+          <div
+            className="app-sidebar-header"
+            aria-expanded={!sidebarCollapsed}
+            onClick={isMobile ? () => setSidebarCollapsed((v) => !v) : undefined}
+            role={isMobile ? 'button' : undefined}
+            tabIndex={isMobile ? 0 : undefined}
+            onKeyDown={isMobile ? (e) => e.key === 'Enter' && setSidebarCollapsed((v) => !v) : undefined}
+          >
+            <span className="app-sidebar-toggle">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: sidebarCollapsed ? 'rotate(180deg)' : 'none' }}>
                 <path d="M15 19l-7-7 7-7" />
               </svg>
-            </button>
+            </span>
             {!sidebarCollapsed && <span className="app-sidebar-title">Категории</span>}
           </div>
           {!sidebarCollapsed && (
@@ -216,7 +231,10 @@ export default function Home() {
                 <TabsTree
                 tree={buildTree(tabs)}
                 selectedTabId={selectedTabId}
-                onSelect={setSelectedTabId}
+                onSelect={(id) => {
+                  setSelectedTabId(id);
+                  if (isMobile) setSidebarCollapsed(true);
+                }}
                 onAddTab={handleAddTab}
                 onDeleteTab={handleDeleteTab}
                 onEditFields={setEditingTabFields}
@@ -227,6 +245,16 @@ export default function Home() {
           )}
         </aside>
 
+        {isMobile && !sidebarCollapsed && (
+          <div
+            className="app-sidebar-backdrop"
+            onClick={() => setSidebarCollapsed(true)}
+            onKeyDown={(e) => e.key === 'Escape' && setSidebarCollapsed(true)}
+            role="button"
+            tabIndex={0}
+            aria-label="Закрыть меню"
+          />
+        )}
         <div className="app-content">
           <div className="container">
           {!selectedTab && (

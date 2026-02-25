@@ -8,9 +8,31 @@ const Chevron = ({ open }) => (
   </svg>
 );
 
+const FolderClosed = () => (
+  <svg className="tabs-tree-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+const FolderOpen = () => (
+  <svg className="tabs-tree-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    <path d="M2 10h20" />
+  </svg>
+);
+
+const FileIcon = () => (
+  <svg className="tabs-tree-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6" />
+    <path d="M16 13H8" />
+    <path d="M16 17H8" />
+  </svg>
+);
+
 const FolderIcon = ({ hasChildren, open }) => (
   <span className="tabs-tree-icon" aria-hidden>
-    {hasChildren ? (open ? '📂' : '📁') : '📄'}
+    {hasChildren ? (open ? <FolderOpen /> : <FolderClosed />) : <FileIcon />}
   </span>
 );
 
@@ -38,7 +60,10 @@ function TreeNode({ node, level, selectedTabId, onSelect, onDeleteTab, onEditFie
         <button
           type="button"
           className="tabs-tree-label"
-          onClick={() => onSelect(node.id)}
+          onClick={() => {
+            onSelect(node.id);
+            if (hasChildren) onToggle(node.id);
+          }}
         >
           {node.name}
         </button>

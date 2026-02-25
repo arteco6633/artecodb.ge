@@ -320,6 +320,7 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 2;
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -394,6 +395,70 @@ a:hover {
 
 .app-main--sidebar-collapsed .app-content {
   margin-left: 56px;
+}
+
+/* Мобильные: сайдбар как меню снизу */
+@media (max-width: 768px) {
+  .app-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9;
+    background: rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+
+  .app-sidebar {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+    flex-direction: column;
+  }
+
+  .app-sidebar--collapsed {
+    width: 100%;
+    height: 56px;
+    max-height: 56px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    border-radius: 0;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .app-sidebar--collapsed .app-sidebar-logo {
+    padding: 8px 12px;
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+  }
+
+  .app-sidebar--collapsed .app-sidebar-logo .app-logo-img {
+    height: 36px;
+  }
+
+  .app-sidebar--collapsed .app-sidebar-header {
+    flex: 1;
+    border-bottom: none;
+    min-width: 0;
+    cursor: pointer;
+  }
+
+  .app-sidebar-header[role="button"] {
+    cursor: pointer;
+  }
+
+  .app-content,
+  .app-main--sidebar-collapsed .app-content {
+    margin-left: 0;
+    padding-bottom: 64px;
+  }
 }
 
 .content-placeholder {
@@ -624,9 +689,19 @@ a:hover {
 }
 
 .tabs-tree-icon {
-  font-size: 1rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  color: var(--muted);
+}
+
+.tabs-tree-icon .tabs-tree-icon-svg {
+  display: block;
+}
+
+.tabs-tree-row--active .tabs-tree-icon {
+  color: var(--text-secondary);
 }
 
 .tabs-tree-label {
