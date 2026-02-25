@@ -93,6 +93,20 @@ export default function Home() {
     loadTabs();
   };
 
+  const handleReorderTabs = async (draggedId, toIndex) => {
+    const fromIndex = tabs.findIndex((t) => t.id === draggedId);
+    if (fromIndex === -1 || fromIndex === toIndex) return;
+    const reordered = [...tabs];
+    const [removed] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, removed);
+    setTabs(reordered);
+    await Promise.all(
+      reordered.map((tab, i) =>
+        supabase.from('tabs').update({ sort_order: i }).eq('id', tab.id)
+      )
+    );
+  };
+
   const handleCloseTabFields = () => {
     setEditingTabFields(null);
     loadTabs();
@@ -166,6 +180,7 @@ export default function Home() {
                 onAddTab={handleAddTab}
                 onDeleteTab={handleDeleteTab}
                 onEditFields={setEditingTabFields}
+                onReorder={handleReorderTabs}
               />
             </div>
           </section>

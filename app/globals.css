@@ -322,8 +322,31 @@ a:hover {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  overflow: hidden;
-  transition: border-color var(--transition), background var(--transition);
+}
+
+.tabs-bar-item--drag-over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-muted);
+}
+
+.tabs-bar-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  margin-left: 2px;
+  color: var(--muted);
+  cursor: grab;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.tabs-bar-drag-handle:hover {
+  color: var(--text-secondary);
+}
+
+.tabs-bar-drag-handle:active {
+  cursor: grabbing;
 }
 
 .tabs-bar-item--active {
