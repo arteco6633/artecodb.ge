@@ -6,8 +6,10 @@ import { getEnabledFields, getCustomFields } from '../lib/fields';
 import { TabsBar } from './components/TabsBar';
 import { ItemsTable } from './components/ItemsTable';
 import { ItemForm } from './components/ItemForm';
+import { ItemCard } from './components/ItemCard';
 import { AddTabForm } from './components/AddTabForm';
 import { TabFieldsForm } from './components/TabFieldsForm';
+import { Search } from './components/Search';
 
 export default function Home() {
   const [tabs, setTabs] = useState([]);
@@ -18,6 +20,7 @@ export default function Home() {
   const [showAddTab, setShowAddTab] = useState(false);
   const [editingTabFields, setEditingTabFields] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedItemCard, setSelectedItemCard] = useState(null);
 
   const loadTabs = async () => {
     const { data, error } = await supabase
@@ -93,6 +96,22 @@ export default function Home() {
     loadTabs();
   };
 
+  const handleOpenItemCard = (item) => setSelectedItemCard(item);
+  const handleCloseItemCard = () => setSelectedItemCard(null);
+  const handleSearchSelectItem = (item) => {
+    setSelectedTabId(item.tab_id);
+    setSelectedItemCard(item);
+  };
+
+  const handleTabCustomFieldsAdded = async (tabId, newFieldDefs) => {
+    if (!newFieldDefs?.length) return;
+    const tab = tabs.find((t) => t.id === tabId);
+    if (!tab) return;
+    const updated = [...(tab.custom_fields || []), ...newFieldDefs];
+    await supabase.from('tabs').update({ custom_fields: updated }).eq('id', tabId);
+    setTabs((prev) => prev.map((t) => (t.id === tabId ? { ...t, custom_fields: updated } : t)));
+  };
+
   const selectedTab = tabs.find((t) => t.id === selectedTabId);
   const enabledFields = selectedTab ? getEnabledFields(selectedTab) : [];
   const customFields = selectedTab ? getCustomFields(selectedTab) : [];
@@ -103,6 +122,7 @@ export default function Home() {
         <div className="container">
           <div className="app-header-inner">
             <h1 className="app-logo">Artecodb</h1>
+            <Search tabs={tabs} onSelectItem={handleSearchSelectItem} />
             <a href="/parser" className="app-link">
               Актуализация с LTB.ge →
             </a>
@@ -146,6 +166,7 @@ export default function Home() {
                   customFields={customFields}
                   onEdit={handleEditItem}
                   onDelete={handleDeleteItem}
+                  onOpenCard={handleOpenItemCard}
                 />
               )}
             </section>
@@ -158,12 +179,22 @@ export default function Home() {
               selectedTab={selectedTab}
               enabledFields={enabledFields}
               onClose={handleCloseItemForm}
+              onTabCustomFieldsAdded={handleTabCustomFieldsAdded}
             />
           )}
 
           {showAddTab && <AddTabForm onClose={handleCloseAddTab} />}
           {editingTabFields && (
             <TabFieldsForm tab={editingTabFields} onClose={handleCloseTabFields} />
+          )}
+
+          {selectedItemCard && (
+            <ItemCard
+              item={selectedItemCard}
+              tab={tabs.find((t) => t.id === selectedItemCard.tab_id)}
+              onClose={handleCloseItemCard}
+              onEdit={(item) => { setSelectedItemCard(null); setEditingItem(item); setShowItemForm(true); }}
+            />
           )}
         </div>
       </main>

@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, BUCKET_PHOTOS } from '../../lib/supabase';
-import { FIELD_IDS, getCustomFields } from '../../lib/fields';
+import { FIELD_IDS, getCustomFields, newCustomFieldId } from '../../lib/fields';
 import { calcCostPerM2FromSheet } from '../../lib/fields';
 
-export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromProp, onClose }) {
+export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromProp, onClose, onTabCustomFieldsAdded }) {
   const isEdit = !!item;
   const enabledFields = Array.isArray(enabledFromProp) && enabledFromProp.length > 0 ? enabledFromProp : FIELD_IDS;
   const customFields = selectedTab ? getCustomFields(selectedTab) : [];
@@ -13,6 +13,7 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const [form, setForm] = useState({
     name: '',
     article: '',
@@ -84,21 +85,79 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    setSubmitError(null);
     setLoading(true);
-    const customData = form.custom_data && typeof form.custom_data === 'object' ? form.custom_data : {};
-    const customDataClean = Object.fromEntries(Object.entries(customData).filter(([, v]) => v !== undefined && v !== null && v !== ''));
+
+    let name = form.name.trim();
+    let article = form.article.trim();
+    let dimensions = form.dimensions.trim();
+    let cost_per_sheet = form.cost_per_sheet !== '' ? form.cost_per_sheet : null;
+    let cost_per_m2 = form.cost_per_m2 !== '' ? form.cost_per_m2 : null;
+    let cost_per_piece = form.cost_per_piece !== '' ? form.cost_per_piece : null;
+    let country = form.country.trim();
+    let link = form.link.trim();
+    let photo_url = form.photo_url || '';
+    let customDataMerged = form.custom_data && typeof form.custom_data === 'object' ? { ...form.custom_data } : {};
+
+    // При добавлении позиции: если указана ссылка LTB — парсим страницу и подставляем данные
+    if (!isEdit && link && link.includes('ltb.ge')) {
+      try {
+        const res = await fetch('/api/parse-ltb-product', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: link, tabId }),
+        });
+        const json = await res.json();
+        if (json.ok && json.data) {
+          const d = json.data;
+          if (d.name && !name) name = d.name;
+          if (d.article && !article) article = d.article;
+          if (d.dimensions && !dimensions) dimensions = d.dimensions;
+          if (d.cost_per_sheet != null && cost_per_sheet == null) cost_per_sheet = String(d.cost_per_sheet);
+          if (d.cost_per_m2 != null && cost_per_m2 == null) cost_per_m2 = String(d.cost_per_m2);
+          if (d.cost_per_piece != null && cost_per_piece == null) cost_per_piece = String(d.cost_per_piece);
+          if (d.country && !country) country = d.country;
+          if (d.photo_url && !photo_url) photo_url = d.photo_url;
+          if (d.extra && Object.keys(d.extra).length > 0 && selectedTab && onTabCustomFieldsAdded) {
+            const existing = selectedTab.custom_fields || [];
+            const newFieldDefs = [];
+            for (const label of Object.keys(d.extra)) {
+              if (!existing.some((f) => f && f.label === label)) newFieldDefs.push({ id: newCustomFieldId(), label });
+            }
+            if (newFieldDefs.length) await onTabCustomFieldsAdded(tabId, newFieldDefs);
+            const allFields = [...existing, ...newFieldDefs];
+            for (const label of Object.keys(d.extra)) {
+              const field = allFields.find((f) => f && f.label === label);
+              if (field) customDataMerged[field.id] = d.extra[label];
+            }
+            setForm((prev) => ({ ...prev, custom_data: { ...prev.custom_data, ...customDataMerged } }));
+          }
+        }
+      } catch (_) {
+        // при ошибке парсинга сохраняем то, что ввёл пользователь
+      }
+    }
+
+    if (!name) {
+      setLoading(false);
+      setSubmitError(link && link.includes('ltb.ge')
+        ? 'Не удалось получить название по ссылке LTB. Введите название вручную или проверьте ссылку.'
+        : 'Укажите название позиции.');
+      return;
+    }
+
+    const customDataClean = Object.fromEntries(Object.entries(customDataMerged).filter(([, v]) => v !== undefined && v !== null && v !== ''));
     const payload = {
       tab_id: tabId,
-      name: form.name.trim(),
-      article: has('article') ? (form.article.trim() || null) : null,
-      cost_per_m2: has('cost_per_m2') && form.cost_per_m2 !== '' ? parseFloat(form.cost_per_m2) : null,
-      cost_per_sheet: has('cost_per_sheet') && form.cost_per_sheet !== '' ? parseFloat(form.cost_per_sheet) : null,
-      cost_per_piece: has('cost_per_piece') && form.cost_per_piece !== '' ? parseFloat(form.cost_per_piece) : null,
-      photo_url: form.photo_url || null,
-      dimensions: has('dimensions') ? (form.dimensions.trim() || null) : null,
-      country: has('country') ? (form.country.trim() || null) : null,
-      link: has('link') ? (form.link.trim() || null) : null,
+      name,
+      article: has('article') ? (article || null) : null,
+      cost_per_m2: has('cost_per_m2') && cost_per_m2 !== '' ? parseFloat(cost_per_m2) : null,
+      cost_per_sheet: has('cost_per_sheet') && cost_per_sheet !== '' ? parseFloat(cost_per_sheet) : null,
+      cost_per_piece: has('cost_per_piece') && cost_per_piece !== '' ? parseFloat(cost_per_piece) : null,
+      photo_url: photo_url || form.photo_url || null,
+      dimensions: has('dimensions') ? (dimensions || null) : null,
+      country: has('country') ? (country || null) : null,
+      link: has('link') ? (link || null) : null,
       custom_data: Object.keys(customDataClean).length > 0 ? customDataClean : {},
     };
     if (isEdit) {
@@ -114,16 +173,18 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="item-form-title">
       <div className="modal" style={{ padding: '24px' }} onClick={(e) => e.stopPropagation()}>
         <h2 id="item-form-title" className="modal-title">{isEdit ? 'Редактировать позицию' : 'Новая позиция'}</h2>
+        {submitError && (
+          <p className="form-error" role="alert" style={{ marginBottom: 16, color: '#f87171', fontSize: '0.9rem' }}>{submitError}</p>
+        )}
         <form onSubmit={handleSubmit}>
           {has('name') && (
             <div className="form-group">
-              <label className="label" htmlFor="item-name">Название *</label>
+              <label className="label" htmlFor="item-name">Название {isEdit ? '*' : '(или укажите ссылку LTB — подставится автоматически)'}</label>
               <input
                 id="item-name"
                 className="input"
                 value={form.name}
-                onChange={(e) => update('name', e.target.value)}
-                required
+                onChange={(e) => { setSubmitError(null); update('name', e.target.value); }}
                 placeholder="Например: Фасад МДФ"
               />
             </div>
@@ -191,6 +252,9 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
             <div className="form-group">
               <label className="label" htmlFor="item-link">Ссылка</label>
               <input id="item-link" type="url" className="input" value={form.link} onChange={(e) => update('link', e.target.value)} placeholder="https://ltb.ge/ge/shop/..." />
+              {!isEdit && (
+                <span className="form-hint">При добавлении позиции по ссылке LTB название, артикул, цена и размеры подставятся автоматически.</span>
+              )}
             </div>
           )}
           {customFields.length > 0 && customFields.map((f) => (

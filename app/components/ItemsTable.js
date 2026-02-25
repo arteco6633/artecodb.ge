@@ -2,7 +2,7 @@
 
 import { FIELD_IDS } from '../../lib/fields';
 
-export function ItemsTable({ items, enabledFields, customFields = [], onEdit, onDelete }) {
+export function ItemsTable({ items, enabledFields, customFields = [], onEdit, onDelete, onOpenCard }) {
   const fields = Array.isArray(enabledFields) && enabledFields.length > 0 ? enabledFields : FIELD_IDS;
   const has = (id) => fields.includes(id);
   const customList = Array.isArray(customFields) ? customFields : [];
@@ -105,7 +105,11 @@ export function ItemsTable({ items, enabledFields, customFields = [], onEdit, on
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} className="items-tr">
+              <tr
+                key={item.id}
+                className={`items-tr ${onOpenCard ? 'items-tr--clickable' : ''}`}
+                onClick={onOpenCard ? () => onOpenCard(item) : undefined}
+              >
                 {has('photo') && <td className={tdClass('photo')}>{renderCell(item, 'photo')}</td>}
                 {has('name') && <td className={tdClass('name')}>{renderCell(item, 'name')}</td>}
                 {has('article') && <td className={tdClass('article')}>{renderCell(item, 'article')}</td>}
@@ -119,7 +123,7 @@ export function ItemsTable({ items, enabledFields, customFields = [], onEdit, on
                 {customList.map((f) => (
                   <td key={f.id} className="items-td">{renderCell(item, f.id)}</td>
                 ))}
-                <td className="items-td items-td--actions">
+                <td className="items-td items-td--actions" onClick={(e) => e.stopPropagation()}>
                   <button type="button" className="btn btn-ghost btn-sm" onClick={() => onEdit(item)}>Изменить</button>
                   <button type="button" className="btn btn-danger btn-sm" onClick={() => onDelete(item.id)}>Удалить</button>
                 </td>
@@ -131,7 +135,14 @@ export function ItemsTable({ items, enabledFields, customFields = [], onEdit, on
 
       <div className="items-cards">
         {items.map((item) => (
-          <article key={item.id} className={`item-card card ${!has('photo') ? 'item-card--no-photo' : ''}`}>
+          <article
+            key={item.id}
+            className={`item-card card ${!has('photo') ? 'item-card--no-photo' : ''} ${onOpenCard ? 'item-card--openable' : ''}`}
+            onClick={onOpenCard ? () => onOpenCard(item) : undefined}
+            role={onOpenCard ? 'button' : undefined}
+            tabIndex={onOpenCard ? 0 : undefined}
+            onKeyDown={onOpenCard ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenCard(item); } } : undefined}
+          >
             {has('photo') && (
               <div className="item-card-media">
                 {item.photo_url ? (
@@ -157,7 +168,7 @@ export function ItemsTable({ items, enabledFields, customFields = [], onEdit, on
                   <div key={f.id}><dt>{f.label}</dt><dd>{item.custom_data?.[f.id] ?? '—'}</dd></div>
                 ))}
               </dl>
-              <div className="item-card-actions">
+              <div className="item-card-actions" onClick={(e) => e.stopPropagation()}>
                 {has('link') && item.link && (
                   <a href={item.link} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">Ссылка</a>
                 )}
