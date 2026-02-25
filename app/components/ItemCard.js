@@ -2,7 +2,7 @@
 
 import { FIELD_LABELS, getEnabledFields, getCustomFields } from '../../lib/fields';
 
-export function ItemCard({ item, tab, onClose, onEdit }) {
+export function ItemCard({ item, tab, onClose, onEdit, onAskGPT }) {
   const enabledFields = tab ? getEnabledFields(tab) : Object.keys(FIELD_LABELS);
   const customFields = tab ? getCustomFields(tab) : [];
   const has = (id) => enabledFields.includes(id);
@@ -121,6 +121,11 @@ export function ItemCard({ item, tab, onClose, onEdit }) {
             </dl>
           </div>
           <div className="item-card-detail-actions">
+            {onAskGPT && (
+              <button type="button" className="btn btn-secondary" onClick={() => onAskGPT(item, tab)}>
+                Спросить GPT об этой позиции
+              </button>
+            )}
             {item.link && (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">Открыть на LTB</a>
             )}

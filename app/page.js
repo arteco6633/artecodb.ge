@@ -12,6 +12,7 @@ import { AddTabForm } from './components/AddTabForm';
 import { MoveTabForm } from './components/MoveTabForm';
 import { TabFieldsForm } from './components/TabFieldsForm';
 import { Search } from './components/Search';
+import { AskModal } from './components/AskModal';
 
 export default function Home() {
   const [tabs, setTabs] = useState([]);
@@ -27,6 +28,8 @@ export default function Home() {
   const [selectedItemCard, setSelectedItemCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showAskModal, setShowAskModal] = useState(false);
+  const [askModalContext, setAskModalContext] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -155,6 +158,19 @@ export default function Home() {
   const handleOpenItemCard = (item) => setSelectedItemCard(item);
   const handleCloseItemCard = () => setSelectedItemCard(null);
 
+  const handleOpenAskFromSidebar = () => {
+    setAskModalContext(null);
+    setShowAskModal(true);
+  };
+  const handleOpenAskFromItem = (item, tab) => {
+    setAskModalContext({ item, tab });
+    setShowAskModal(true);
+  };
+  const handleCloseAskModal = () => {
+    setShowAskModal(false);
+    setAskModalContext(null);
+  };
+
   const handleToggleSelect = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
@@ -223,6 +239,13 @@ export default function Home() {
             <>
               <div className="app-sidebar-tools">
                 <Search tabs={tabs} onSelectItem={handleSearchSelectItem} />
+                <button
+                  type="button"
+                  className="btn btn-secondary app-ask-btn"
+                  onClick={handleOpenAskFromSidebar}
+                >
+                  Спросить GPT о материалах
+                </button>
                 <a href="/parser" className="app-link app-link--block">
                   Актуализация с LTB.ge →
                 </a>
@@ -328,6 +351,12 @@ export default function Home() {
           {editingTabFields && (
             <TabFieldsForm tab={editingTabFields} onClose={handleCloseTabFields} />
           )}
+          {showAskModal && (
+            <AskModal
+              onClose={handleCloseAskModal}
+              itemContext={askModalContext}
+            />
+          )}
 
           {selectedItemCard && (
             <ItemCard
@@ -335,6 +364,7 @@ export default function Home() {
               tab={tabs.find((t) => t.id === selectedItemCard.tab_id)}
               onClose={handleCloseItemCard}
               onEdit={(item) => { setSelectedItemCard(null); setEditingItem(item); setShowItemForm(true); }}
+              onAskGPT={handleOpenAskFromItem}
             />
           )}
           </div>

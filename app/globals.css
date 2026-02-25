@@ -982,6 +982,15 @@ a:hover {
   overflow-y: auto;
 }
 
+/* Ask modal: overlay fade-in */
+.ask-modal-overlay {
+  animation: ask-overlay-in 0.25s ease-out;
+}
+@keyframes ask-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .modal {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -991,6 +1000,25 @@ a:hover {
   max-width: 520px;
   max-height: min(90vh, 600px);
   overflow-y: auto;
+}
+
+/* Ask modal: panel scale + fade */
+.ask-modal-overlay .ask-modal {
+  animation: ask-modal-in 0.3s ease-out;
+  max-width: 540px;
+  padding: 24px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  border-radius: 14px;
+}
+@keyframes ask-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .modal-title {
@@ -1004,6 +1032,170 @@ a:hover {
   margin: 0 0 16px;
   font-size: 0.9375rem;
   color: var(--text-secondary);
+}
+
+/* Ask modal layout */
+.ask-modal .modal-title { display: none; }
+.ask-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-right: 36px;
+  position: relative;
+}
+.ask-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  background: var(--accent-muted);
+  border-radius: 6px;
+}
+.ask-modal-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.ask-modal-close {
+  position: absolute;
+  top: -4px;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.ask-modal-close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.ask-modal-desc {
+  margin: 0 0 20px;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.ask-modal-field { margin-bottom: 16px; }
+.ask-modal-textarea {
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.ask-modal-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+  outline: none;
+}
+
+.ask-modal-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  color: var(--danger);
+  background: var(--danger-muted);
+  border-radius: var(--radius-sm);
+}
+
+/* Loading dots */
+.ask-modal-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.ask-modal-loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: ask-dot 1.2s ease-in-out infinite both;
+}
+.ask-modal-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.ask-modal-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes ask-dot {
+  0%, 80%, 100% { opacity: 0.4; transform: scale(0.9); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+.ask-modal-answer {
+  margin: 0 0 20px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  animation: ask-answer-in 0.3s ease-out;
+}
+@keyframes ask-answer-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ask-modal-answer-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.ask-modal-answer-text {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.ask-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.ask-modal-submit {
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.ask-modal-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 122, 200, 0.25);
+}
+.ask-modal-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+@media (max-width: 560px) {
+  .ask-modal-overlay { padding: 12px; }
+  .ask-modal-overlay .ask-modal {
+    max-height: 88vh;
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .ask-modal-header { padding-right: 32px; margin-bottom: 10px; }
+  .ask-modal-title { font-size: 1rem; }
+  .ask-modal-desc { font-size: 0.875rem; margin-bottom: 16px; }
+  .ask-modal-actions { flex-direction: column; }
+  .ask-modal-actions .btn { width: 100%; }
+}
+
+.app-ask-btn {
+  width: 100%;
 }
 
 /* Карточка товара (детальный просмотр) */
