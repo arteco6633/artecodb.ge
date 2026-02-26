@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, BUCKET_PHOTOS } from '../../lib/supabase';
+import { supabase, BUCKET_PHOTOS, BUCKET_DOCS } from '../../lib/supabase';
 import { FIELD_IDS, getCustomFields, newCustomFieldId } from '../../lib/fields';
 import { calcCostPerM2FromSheet } from '../../lib/fields';
 
@@ -13,6 +13,7 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [form, setForm] = useState({
     name: '',
@@ -24,6 +25,9 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
     dimensions: '',
     country: '',
     link: '',
+    documentation_url: '',
+    official_website_url: '',
+    video_url: '',
     custom_data: {},
   });
 
@@ -39,6 +43,9 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
         dimensions: item.dimensions || '',
         country: item.country || '',
         link: item.link || '',
+        documentation_url: item.documentation_url || '',
+        official_website_url: item.official_website_url || '',
+        video_url: item.video_url || '',
         custom_data: item.custom_data && typeof item.custom_data === 'object' ? { ...item.custom_data } : {},
       });
     }
@@ -83,6 +90,27 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
     update('photo_url', urlData.publicUrl);
   };
 
+  const handleDocumentChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDoc(true);
+    const ext = file.name.split('.').pop() || 'pdf';
+    const path = `${tabId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const { data, error } = await supabase.storage.from(BUCKET_DOCS).upload(path, file, { upsert: true });
+    setUploadingDoc(false);
+    if (error) {
+      alert('Ошибка загрузки документа: ' + error.message);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from(BUCKET_DOCS).getPublicUrl(data.path);
+    update('documentation_url', urlData.publicUrl);
+    e.target.value = '';
+  };
+
+  const handleRemoveDocument = () => {
+    update('documentation_url', '');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError(null);
@@ -96,6 +124,9 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
     let cost_per_piece = form.cost_per_piece !== '' ? form.cost_per_piece : null;
     let country = form.country.trim();
     let link = form.link.trim();
+    let documentation_url = form.documentation_url.trim();
+    let official_website_url = form.official_website_url.trim();
+    let video_url = form.video_url.trim();
     let photo_url = form.photo_url || '';
     let customDataMerged = form.custom_data && typeof form.custom_data === 'object' ? { ...form.custom_data } : {};
 
@@ -158,6 +189,9 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
       dimensions: has('dimensions') ? (dimensions || null) : null,
       country: has('country') ? (country || null) : null,
       link: has('link') ? (link || null) : null,
+      documentation_url: has('documentation_url') ? (documentation_url || null) : null,
+      official_website_url: has('official_website_url') ? (official_website_url || null) : null,
+      video_url: has('video_url') ? (video_url || null) : null,
       custom_data: Object.keys(customDataClean).length > 0 ? customDataClean : {},
     };
     if (isEdit) {
@@ -254,6 +288,50 @@ export function ItemForm({ tabId, item, selectedTab, enabledFields: enabledFromP
               <input id="item-link" type="url" className="input" value={form.link} onChange={(e) => update('link', e.target.value)} placeholder="https://ltb.ge/ge/shop/..." />
               {!isEdit && (
                 <span className="form-hint">При добавлении позиции по ссылке LTB название, артикул, цена и размеры подставятся автоматически.</span>
+              )}
+            </div>
+          )}
+          {(has('documentation_url') || has('official_website_url') || has('video_url')) && (
+            <div className="form-group item-form-extra-links">
+              <span className="label">Дополнительные ссылки</span>
+              {has('documentation_url') && (
+                <div className="form-group item-form-doc-upload">
+                  <label className="label">Документация</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.odt,.ods,image/jpeg,image/png,application/pdf"
+                      onChange={handleDocumentChange}
+                      disabled={uploadingDoc}
+                    />
+                    {uploadingDoc && <span style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>Загрузка…</span>}
+                    {form.documentation_url && (
+                      <>
+                        <a href={form.documentation_url} target="_blank" rel="noopener noreferrer" className="item-form-doc-link">Открыть</a>
+                        <button type="button" className="btn btn-ghost item-form-doc-remove" onClick={handleRemoveDocument}>Удалить</button>
+                      </>
+                    )}
+                  </div>
+                  <span className="form-hint">PDF, Word, Excel или изображение. До 20 МБ.</span>
+                </div>
+              )}
+              {has('official_website_url') && (
+                <input
+                  type="url"
+                  className="input"
+                  value={form.official_website_url}
+                  onChange={(e) => update('official_website_url', e.target.value)}
+                  placeholder="Официальный сайт производителя"
+                />
+              )}
+              {has('video_url') && (
+                <input
+                  type="url"
+                  className="input"
+                  value={form.video_url}
+                  onChange={(e) => update('video_url', e.target.value)}
+                  placeholder="Видео (YouTube и т.д.)"
+                />
               )}
             </div>
           )}

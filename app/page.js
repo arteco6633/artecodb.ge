@@ -130,18 +130,21 @@ export default function Home() {
     loadTabs();
   };
 
-  const handleReorderTabs = async (draggedId, toIndex) => {
-    const fromIndex = tabs.findIndex((t) => t.id === draggedId);
-    if (fromIndex === -1 || fromIndex === toIndex) return;
-    const reordered = [...tabs];
+  /** Перестановка только корневых папок по порядку (drag-and-drop). */
+  const handleReorderRoots = async (fromIndex, toIndex) => {
+    const roots = tabs
+      .filter((t) => t.parent_id == null)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    if (fromIndex < 0 || fromIndex >= roots.length || toIndex < 0 || toIndex >= roots.length || fromIndex === toIndex) return;
+    const reordered = [...roots];
     const [removed] = reordered.splice(fromIndex, 1);
     reordered.splice(toIndex, 0, removed);
-    setTabs(reordered);
     await Promise.all(
       reordered.map((tab, i) =>
         supabase.from('tabs').update({ sort_order: i }).eq('id', tab.id)
       )
     );
+    loadTabs();
   };
 
   const handleCloseTabFields = () => {
@@ -262,6 +265,7 @@ export default function Home() {
                 onDeleteTab={handleDeleteTab}
                 onEditFields={setEditingTabFields}
                 onMoveTab={handleMoveTab}
+                onReorderRoots={handleReorderRoots}
               />
               </div>
             </>

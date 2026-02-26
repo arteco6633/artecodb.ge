@@ -36,6 +36,10 @@ export function ItemCard({ item, tab, onClose, onEdit, onAskGPT }) {
             {item.ltb_available != null && (item.ltb_available ? ' ✓ В наличии' : ' Нет в наличии')}
           </span>
         ) : '—';
+      case 'documentation_url':
+      case 'official_website_url':
+      case 'video_url':
+        return null; /* показываем отдельным блоком ниже */
       default:
         if (typeof fieldId === 'string' && fieldId.startsWith('custom_')) {
           const val = item.custom_data?.[fieldId];
@@ -120,6 +124,28 @@ export function ItemCard({ item, tab, onClose, onEdit, onAskGPT }) {
               ))}
             </dl>
           </div>
+          {(has('documentation_url') && item.documentation_url) || (has('official_website_url') && item.official_website_url) || (has('video_url') && item.video_url) ? (
+            <div className="item-card-detail-extra-links">
+              {has('documentation_url') && item.documentation_url && (
+                <a href={item.documentation_url} target="_blank" rel="noopener noreferrer" className="item-card-extra-link item-card-extra-link--doc">
+                  <span className="item-card-extra-link-icon">📄</span>
+                  <span>Документация</span>
+                </a>
+              )}
+              {has('official_website_url') && item.official_website_url && (
+                <a href={item.official_website_url} target="_blank" rel="noopener noreferrer" className="item-card-extra-link item-card-extra-link--site">
+                  <span className="item-card-extra-link-icon">🌐</span>
+                  <span>Официальный сайт</span>
+                </a>
+              )}
+              {has('video_url') && item.video_url && (
+                <a href={item.video_url} target="_blank" rel="noopener noreferrer" className="item-card-extra-link item-card-extra-link--video">
+                  <span className="item-card-extra-link-icon">▶</span>
+                  <span>Видео</span>
+                </a>
+              )}
+            </div>
+          ) : null}
           <div className="item-card-detail-actions">
             {onAskGPT && (
               <button type="button" className="btn btn-secondary" onClick={() => onAskGPT(item, tab)}>

@@ -36,17 +36,77 @@ const FolderIcon = ({ hasChildren, open }) => (
   </span>
 );
 
-function TreeNode({ node, level, selectedTabId, onSelect, onDeleteTab, onEditFields, onMoveTab, expandedIds, onToggle }) {
+function TreeNode({ node, level, rootIndex, onReorderRoots, selectedTabId, onSelect, onDeleteTab, onEditFields, onMoveTab, expandedIds, onToggle }) {
   const hasChildren = node.children?.length > 0;
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedTabId === node.id;
+  const isRoot = level === 0;
+
+  const handleDragStart = (e) => {
+    if (!isRoot || !onReorderRoots) return;
+    e.dataTransfer.setData('text/plain', String(rootIndex));
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify({ rootIndex }));
+    const row = e.target.closest('.tabs-tree-row');
+    if (row) row.classList.add('tabs-tree-row--dragging');
+  };
+
+  const handleDragEnd = (e) => {
+    const row = e.target.closest('.tabs-tree-row');
+    if (row) row.classList.remove('tabs-tree-row--dragging');
+  };
+
+  const handleDragOver = (e) => {
+    if (!isRoot || !onReorderRoots) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('tabs-tree-row--drag-over');
+  };
+
+  const handleDragLeave = (e) => {
+    e.currentTarget.classList.remove('tabs-tree-row--drag-over');
+  };
+
+  const handleDrop = (e) => {
+    if (!isRoot || !onReorderRoots) return;
+    e.preventDefault();
+    e.currentTarget.classList.remove('tabs-tree-row--drag-over');
+    let fromIndex;
+    try {
+      const data = e.dataTransfer.getData('application/json');
+      if (data) fromIndex = JSON.parse(data).rootIndex;
+      else fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    } catch {
+      fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    }
+    if (Number.isNaN(fromIndex) || fromIndex === rootIndex) return;
+    onReorderRoots(fromIndex, rootIndex);
+  };
 
   return (
     <div className="tabs-tree-node" data-level={level}>
       <div
-        className={`tabs-tree-row ${isSelected ? 'tabs-tree-row--active' : ''}`}
+        className={`tabs-tree-row ${isSelected ? 'tabs-tree-row--active' : ''} ${isRoot && onReorderRoots ? 'tabs-tree-row--draggable' : ''}`}
         style={{ paddingLeft: 12 + level * 16 }}
+        {...(isRoot && onReorderRoots && {
+          onDragOver: handleDragOver,
+          onDragLeave: handleDragLeave,
+          onDrop: handleDrop,
+        })}
       >
+        {isRoot && onReorderRoots && (
+          <span
+            className="tabs-tree-drag-handle"
+            draggable
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onClick={(e) => e.stopPropagation()}
+            title="Перетащите для изменения порядка"
+            aria-hidden
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
+          </span>
+        )}
         <button
           type="button"
           className="tabs-tree-toggle"
@@ -125,7 +185,7 @@ function TreeNode({ node, level, selectedTabId, onSelect, onDeleteTab, onEditFie
   );
 }
 
-export function TabsTree({ tree, selectedTabId, onSelect, onAddTab, onDeleteTab, onEditFields, onMoveTab }) {
+export function TabsTree({ tree, selectedTabId, onSelect, onAddTab, onDeleteTab, onEditFields, onMoveTab, onReorderRoots }) {
   const [expandedIds, setExpandedIds] = useState(() => new Set());
 
   const handleToggle = (id) => {
@@ -143,11 +203,13 @@ export function TabsTree({ tree, selectedTabId, onSelect, onAddTab, onDeleteTab,
         <p className="tabs-tree-empty">Нет категорий. Добавьте первую.</p>
       ) : (
         <div className="tabs-tree-list">
-          {tree.map((node) => (
+          {tree.map((node, index) => (
             <TreeNode
               key={node.id}
               node={node}
               level={0}
+              rootIndex={index}
+              onReorderRoots={onReorderRoots}
               selectedTabId={selectedTabId}
               onSelect={onSelect}
               onDeleteTab={onDeleteTab}
